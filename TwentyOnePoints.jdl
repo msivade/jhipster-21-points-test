@@ -1,0 +1,80 @@
+application {
+  config {
+    applicationType monolith
+    authenticationType jwt
+    baseName TwentyOnePoints
+    blueprints []
+    buildTool gradle
+    cacheProvider ehcache
+    clientFramework angularX
+    clientPackageManager yarn
+    clientTheme none
+    creationTimestamp 1600687461427
+    databaseType sql
+    devDatabaseType h2Disk
+    dtoSuffix DTO
+    embeddableLaunchScript false
+    enableHibernateCache true
+    enableSwaggerCodegen false
+    enableTranslation true
+    jhiPrefix jhi
+    jhipsterVersion "6.10.3"
+    jwtSecretKey "ZmVmZmY2YjEwMTZmOTI1MzM2YWVkYzc5NzMzM2MxMGEzZmYxNTRhMTI5ZDZjNGZhNWI5OTQ5MTM4YzczY2MzZGJlOTgwZTliMDk1YTUwYzBkZWE2ODEwYmM4Y2M4YjFlNzYyZGY0ZjJmMGYwZGFiOTdiNTg3YTkyMTI2MDI1MTc="
+    languages [en]
+    messageBroker false
+    nativeLanguage en
+    otherModules []
+    packageName org.jhipster.health
+    prodDatabaseType postgresql
+    searchEngine elasticsearch
+    serverPort 8080
+    serviceDiscoveryType false
+    skipClient false
+    skipServer false
+    skipUserManagement false
+    testFrameworks [gatling, protractor]
+    useSass true
+    websocket false
+  }
+
+  entities BloodPressure, Points, Preferences, Weight
+}
+
+entity BloodPressure {
+  timestamp LocalDate required,
+  systolic Integer required,
+  diastolic Integer required
+}
+entity Points {
+  date LocalDate required,
+  exercise Integer,
+  meals Integer,
+  alcohol Integer,
+  notes String maxlength(140)
+}
+entity Preferences {
+  weeklyGoal Integer min(10) max(21),
+  weightUnits Units required
+}
+entity Weight {
+  timestamp LocalDate required,
+  weight Integer required
+}
+enum Units {
+  KG,
+  LB
+}
+
+relationship OneToOne {
+  Preferences{user(login)} to User
+}
+relationship ManyToOne {
+  BloodPressure{user(login)} to User,
+  Points{user(login)} to User,
+  Weight{user(login)} to User
+}
+
+paginate BloodPressure, Points, Preferences, Weight with pagination
+service BloodPressure, Points, Preferences, Weight with serviceImpl
+search BloodPressure, Points, Preferences, Weight with elasticsearch
+filter BloodPressure, Points, Preferences, Weight

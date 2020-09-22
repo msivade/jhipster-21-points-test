@@ -17,6 +17,7 @@ import io.github.jhipster.service.QueryService;
 import org.jhipster.health.domain.Preferences;
 import org.jhipster.health.domain.*; // for static metamodels
 import org.jhipster.health.repository.PreferencesRepository;
+import org.jhipster.health.repository.search.PreferencesSearchRepository;
 import org.jhipster.health.service.dto.PreferencesCriteria;
 
 /**
@@ -33,8 +34,11 @@ public class PreferencesQueryService extends QueryService<Preferences> {
 
     private final PreferencesRepository preferencesRepository;
 
-    public PreferencesQueryService(PreferencesRepository preferencesRepository) {
+    private final PreferencesSearchRepository preferencesSearchRepository;
+
+    public PreferencesQueryService(PreferencesRepository preferencesRepository, PreferencesSearchRepository preferencesSearchRepository) {
         this.preferencesRepository = preferencesRepository;
+        this.preferencesSearchRepository = preferencesSearchRepository;
     }
 
     /**

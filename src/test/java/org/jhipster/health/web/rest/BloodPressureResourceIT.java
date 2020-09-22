@@ -4,15 +4,21 @@ import org.jhipster.health.TwentyOnePointsApp;
 import org.jhipster.health.domain.BloodPressure;
 import org.jhipster.health.domain.User;
 import org.jhipster.health.repository.BloodPressureRepository;
+import org.jhipster.health.repository.search.BloodPressureSearchRepository;
 import org.jhipster.health.service.BloodPressureService;
 import org.jhipster.health.service.dto.BloodPressureCriteria;
 import org.jhipster.health.service.BloodPressureQueryService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -31,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@link BloodPressureResource} REST controller.
  */
 @SpringBootTest(classes = TwentyOnePointsApp.class)
+@ExtendWith(MockitoExtension.class)
 @AutoConfigureMockMvc
 @WithMockUser
 public class BloodPressureResourceIT {
@@ -52,6 +62,14 @@ public class BloodPressureResourceIT {
 
     @Autowired
     private BloodPressureService bloodPressureService;
+
+    /**
+     * This repository is mocked in the org.jhipster.health.repository.search test package.
+     *
+     * @see org.jhipster.health.repository.search.BloodPressureSearchRepositoryMockConfiguration
+     */
+    @Autowired
+    private BloodPressureSearchRepository mockBloodPressureSearchRepository;
 
     @Autowired
     private BloodPressureQueryService bloodPressureQueryService;
@@ -113,6 +131,9 @@ public class BloodPressureResourceIT {
         assertThat(testBloodPressure.getTimestamp()).isEqualTo(DEFAULT_TIMESTAMP);
         assertThat(testBloodPressure.getSystolic()).isEqualTo(DEFAULT_SYSTOLIC);
         assertThat(testBloodPressure.getDiastolic()).isEqualTo(DEFAULT_DIASTOLIC);
+
+        // Validate the BloodPressure in Elasticsearch
+        verify(mockBloodPressureSearchRepository, times(1)).save(testBloodPressure);
     }
 
     @Test
@@ -132,6 +153,9 @@ public class BloodPressureResourceIT {
         // Validate the BloodPressure in the database
         List<BloodPressure> bloodPressureList = bloodPressureRepository.findAll();
         assertThat(bloodPressureList).hasSize(databaseSizeBeforeCreate);
+
+        // Validate the BloodPressure in Elasticsearch
+        verify(mockBloodPressureSearchRepository, times(0)).save(bloodPressure);
     }
 
 
@@ -651,6 +675,9 @@ public class BloodPressureResourceIT {
         assertThat(testBloodPressure.getTimestamp()).isEqualTo(UPDATED_TIMESTAMP);
         assertThat(testBloodPressure.getSystolic()).isEqualTo(UPDATED_SYSTOLIC);
         assertThat(testBloodPressure.getDiastolic()).isEqualTo(UPDATED_DIASTOLIC);
+
+        // Validate the BloodPressure in Elasticsearch
+        verify(mockBloodPressureSearchRepository, times(2)).save(testBloodPressure);
     }
 
     @Test
@@ -667,6 +694,9 @@ public class BloodPressureResourceIT {
         // Validate the BloodPressure in the database
         List<BloodPressure> bloodPressureList = bloodPressureRepository.findAll();
         assertThat(bloodPressureList).hasSize(databaseSizeBeforeUpdate);
+
+        // Validate the BloodPressure in Elasticsearch
+        verify(mockBloodPressureSearchRepository, times(0)).save(bloodPressure);
     }
 
     @Test
@@ -685,13 +715,19 @@ public class BloodPressureResourceIT {
         // Validate the database contains one less item
         List<BloodPressure> bloodPressureList = bloodPressureRepository.findAll();
         assertThat(bloodPressureList).hasSize(databaseSizeBeforeDelete - 1);
+
+        // Validate the BloodPressure in Elasticsearch
+        verify(mockBloodPressureSearchRepository, times(1)).deleteById(bloodPressure.getId());
     }
 
     @Test
     @Transactional
     public void searchBloodPressure() throws Exception {
+        // Configure the mock search repository
         // Initialize the database
         bloodPressureService.save(bloodPressure);
+        when(mockBloodPressureSearchRepository.search(queryStringQuery("id:" + bloodPressure.getId()), PageRequest.of(0, 20)))
+            .thenReturn(new PageImpl<>(Collections.singletonList(bloodPressure), PageRequest.of(0, 1), 1));
 
         // Search the bloodPressure
         restBloodPressureMockMvc.perform(get("/api/_search/blood-pressures?query=id:" + bloodPressure.getId()))

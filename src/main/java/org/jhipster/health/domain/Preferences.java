@@ -6,6 +6,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import javax.persistence.*;
 import javax.validation.constraints.*;
 
+import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.io.Serializable;
 
 import org.jhipster.health.domain.enumeration.Units;
@@ -16,6 +17,7 @@ import org.jhipster.health.domain.enumeration.Units;
 @Entity
 @Table(name = "preferences")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@org.springframework.data.elasticsearch.annotations.Document(indexName = "preferences")
 public class Preferences implements Serializable {
 
     private static final long serialVersionUID = 1L;

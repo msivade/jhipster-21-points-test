@@ -3,6 +3,7 @@ package org.jhipster.health.service.impl;
 import org.jhipster.health.service.BloodPressureService;
 import org.jhipster.health.domain.BloodPressure;
 import org.jhipster.health.repository.BloodPressureRepository;
+import org.jhipster.health.repository.search.BloodPressureSearchRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+
+import static org.elasticsearch.index.query.QueryBuilders.*;
 
 /**
  * Service Implementation for managing {@link BloodPressure}.
@@ -24,14 +27,19 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
     private final BloodPressureRepository bloodPressureRepository;
 
-    public BloodPressureServiceImpl(BloodPressureRepository bloodPressureRepository) {
+    private final BloodPressureSearchRepository bloodPressureSearchRepository;
+
+    public BloodPressureServiceImpl(BloodPressureRepository bloodPressureRepository, BloodPressureSearchRepository bloodPressureSearchRepository) {
         this.bloodPressureRepository = bloodPressureRepository;
+        this.bloodPressureSearchRepository = bloodPressureSearchRepository;
     }
 
     @Override
     public BloodPressure save(BloodPressure bloodPressure) {
         log.debug("Request to save BloodPressure : {}", bloodPressure);
-        return bloodPressureRepository.save(bloodPressure);
+        BloodPressure result = bloodPressureRepository.save(bloodPressure);
+        bloodPressureSearchRepository.save(result);
+        return result;
     }
 
     @Override
@@ -53,11 +61,12 @@ public class BloodPressureServiceImpl implements BloodPressureService {
     public void delete(Long id) {
         log.debug("Request to delete BloodPressure : {}", id);
         bloodPressureRepository.deleteById(id);
+        bloodPressureSearchRepository.deleteById(id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<BloodPressure> search(String query, Pageable pageable) {
         log.debug("Request to search for a page of BloodPressures for query {}", query);
-        return bloodPressureRepository.search(BloodPressure.PREFIX, query, pageable);    }
+        return bloodPressureSearchRepository.search(queryStringQuery(query), pageable);    }
 }

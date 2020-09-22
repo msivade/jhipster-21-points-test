@@ -3,6 +3,7 @@ package org.jhipster.health.service.impl;
 import org.jhipster.health.service.PointsService;
 import org.jhipster.health.domain.Points;
 import org.jhipster.health.repository.PointsRepository;
+import org.jhipster.health.repository.search.PointsSearchRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+
+import static org.elasticsearch.index.query.QueryBuilders.*;
 
 /**
  * Service Implementation for managing {@link Points}.
@@ -24,14 +27,19 @@ public class PointsServiceImpl implements PointsService {
 
     private final PointsRepository pointsRepository;
 
-    public PointsServiceImpl(PointsRepository pointsRepository) {
+    private final PointsSearchRepository pointsSearchRepository;
+
+    public PointsServiceImpl(PointsRepository pointsRepository, PointsSearchRepository pointsSearchRepository) {
         this.pointsRepository = pointsRepository;
+        this.pointsSearchRepository = pointsSearchRepository;
     }
 
     @Override
     public Points save(Points points) {
         log.debug("Request to save Points : {}", points);
-        return pointsRepository.save(points);
+        Points result = pointsRepository.save(points);
+        pointsSearchRepository.save(result);
+        return result;
     }
 
     @Override
@@ -53,11 +61,12 @@ public class PointsServiceImpl implements PointsService {
     public void delete(Long id) {
         log.debug("Request to delete Points : {}", id);
         pointsRepository.deleteById(id);
+        pointsSearchRepository.deleteById(id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<Points> search(String query, Pageable pageable) {
         log.debug("Request to search for a page of Points for query {}", query);
-        return pointsRepository.search(Points.PREFIX, query, pageable);    }
+        return pointsSearchRepository.search(queryStringQuery(query), pageable);    }
 }

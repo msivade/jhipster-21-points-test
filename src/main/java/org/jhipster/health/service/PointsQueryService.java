@@ -17,6 +17,7 @@ import io.github.jhipster.service.QueryService;
 import org.jhipster.health.domain.Points;
 import org.jhipster.health.domain.*; // for static metamodels
 import org.jhipster.health.repository.PointsRepository;
+import org.jhipster.health.repository.search.PointsSearchRepository;
 import org.jhipster.health.service.dto.PointsCriteria;
 
 /**
@@ -33,8 +34,11 @@ public class PointsQueryService extends QueryService<Points> {
 
     private final PointsRepository pointsRepository;
 
-    public PointsQueryService(PointsRepository pointsRepository) {
+    private final PointsSearchRepository pointsSearchRepository;
+
+    public PointsQueryService(PointsRepository pointsRepository, PointsSearchRepository pointsSearchRepository) {
         this.pointsRepository = pointsRepository;
+        this.pointsSearchRepository = pointsSearchRepository;
     }
 
     /**

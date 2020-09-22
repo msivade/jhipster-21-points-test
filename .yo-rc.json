@@ -39,6 +39,10 @@
     "nativeLanguage": "en",
     "languages": ["en"],
     "blueprints": [],
-    "lastLiquibaseTimestamp": 1600693626000
-  }
+    "lastLiquibaseTimestamp": 1600693626000,
+    "skipUserManagement": false,
+    "skipClient": false,
+    "skipServer": false
+  },
+  "entities": ["BloodPressure", "Points", "Preferences", "Weight"]
 }

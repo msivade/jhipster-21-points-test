@@ -17,6 +17,7 @@ import io.github.jhipster.service.QueryService;
 import org.jhipster.health.domain.BloodPressure;
 import org.jhipster.health.domain.*; // for static metamodels
 import org.jhipster.health.repository.BloodPressureRepository;
+import org.jhipster.health.repository.search.BloodPressureSearchRepository;
 import org.jhipster.health.service.dto.BloodPressureCriteria;
 
 /**
@@ -33,8 +34,11 @@ public class BloodPressureQueryService extends QueryService<BloodPressure> {
 
     private final BloodPressureRepository bloodPressureRepository;
 
-    public BloodPressureQueryService(BloodPressureRepository bloodPressureRepository) {
+    private final BloodPressureSearchRepository bloodPressureSearchRepository;
+
+    public BloodPressureQueryService(BloodPressureRepository bloodPressureRepository, BloodPressureSearchRepository bloodPressureSearchRepository) {
         this.bloodPressureRepository = bloodPressureRepository;
+        this.bloodPressureSearchRepository = bloodPressureSearchRepository;
     }
 
     /**

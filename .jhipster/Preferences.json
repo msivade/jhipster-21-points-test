@@ -3,13 +3,12 @@
   "clientRootFolder": "",
   "relationships": [
     {
-      "relationshipName": "user",
-      "otherEntityName": "user",
       "relationshipType": "one-to-one",
+      "otherEntityName": "user",
+      "otherEntityRelationshipName": "preferences",
+      "relationshipName": "user",
       "otherEntityField": "login",
-      "ownerSide": true,
-      "useJPADerivedIdentifier": false,
-      "otherEntityRelationshipName": "preferences"
+      "ownerSide": true
     }
   ],
   "fields": [
@@ -29,11 +28,14 @@
   ],
   "changelogDate": "20200921130706",
   "dto": "no",
-  "searchEngine": true,
+  "searchEngine": "elasticsearch",
   "service": "serviceImpl",
   "entityTableName": "preferences",
   "databaseType": "sql",
   "readOnly": false,
   "jpaMetamodelFiltering": true,
-  "pagination": "pagination"
+  "pagination": "pagination",
+  "name": "Preferences",
+  "embedded": false,
+  "applications": ["TwentyOnePoints"]
 }

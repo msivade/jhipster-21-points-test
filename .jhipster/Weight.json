@@ -3,12 +3,11 @@
   "clientRootFolder": "",
   "relationships": [
     {
-      "relationshipName": "user",
-      "otherEntityName": "user",
       "relationshipType": "many-to-one",
-      "otherEntityField": "login",
-      "ownerSide": true,
-      "otherEntityRelationshipName": "weight"
+      "otherEntityName": "user",
+      "otherEntityRelationshipName": "weight",
+      "relationshipName": "user",
+      "otherEntityField": "login"
     }
   ],
   "fields": [
@@ -25,11 +24,14 @@
   ],
   "changelogDate": "20200921125815",
   "dto": "no",
-  "searchEngine": true,
+  "searchEngine": "elasticsearch",
   "service": "serviceImpl",
   "entityTableName": "weight",
   "databaseType": "sql",
   "readOnly": false,
   "jpaMetamodelFiltering": true,
-  "pagination": "pagination"
+  "pagination": "pagination",
+  "name": "Weight",
+  "embedded": false,
+  "applications": ["TwentyOnePoints"]
 }

@@ -9,12 +9,12 @@ import { RouterModule } from '@angular/router';
         loadChildren: () => import('./points/points.module').then(m => m.TwentyOnePointsPointsModule),
       },
       {
-        path: 'blood-pressure',
-        loadChildren: () => import('./blood-pressure/blood-pressure.module').then(m => m.TwentyOnePointsBloodPressureModule),
-      },
-      {
         path: 'weight',
         loadChildren: () => import('./weight/weight.module').then(m => m.TwentyOnePointsWeightModule),
+      },
+      {
+        path: 'blood-pressure',
+        loadChildren: () => import('./blood-pressure/blood-pressure.module').then(m => m.TwentyOnePointsBloodPressureModule),
       },
       {
         path: 'preferences',

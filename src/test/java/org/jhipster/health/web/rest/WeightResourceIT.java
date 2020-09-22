@@ -4,15 +4,21 @@ import org.jhipster.health.TwentyOnePointsApp;
 import org.jhipster.health.domain.Weight;
 import org.jhipster.health.domain.User;
 import org.jhipster.health.repository.WeightRepository;
+import org.jhipster.health.repository.search.WeightSearchRepository;
 import org.jhipster.health.service.WeightService;
 import org.jhipster.health.service.dto.WeightCriteria;
 import org.jhipster.health.service.WeightQueryService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -31,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@link WeightResource} REST controller.
  */
 @SpringBootTest(classes = TwentyOnePointsApp.class)
+@ExtendWith(MockitoExtension.class)
 @AutoConfigureMockMvc
 @WithMockUser
 public class WeightResourceIT {
@@ -48,6 +58,14 @@ public class WeightResourceIT {
 
     @Autowired
     private WeightService weightService;
+
+    /**
+     * This repository is mocked in the org.jhipster.health.repository.search test package.
+     *
+     * @see org.jhipster.health.repository.search.WeightSearchRepositoryMockConfiguration
+     */
+    @Autowired
+    private WeightSearchRepository mockWeightSearchRepository;
 
     @Autowired
     private WeightQueryService weightQueryService;
@@ -106,6 +124,9 @@ public class WeightResourceIT {
         Weight testWeight = weightList.get(weightList.size() - 1);
         assertThat(testWeight.getTimestamp()).isEqualTo(DEFAULT_TIMESTAMP);
         assertThat(testWeight.getWeight()).isEqualTo(DEFAULT_WEIGHT);
+
+        // Validate the Weight in Elasticsearch
+        verify(mockWeightSearchRepository, times(1)).save(testWeight);
     }
 
     @Test
@@ -125,6 +146,9 @@ public class WeightResourceIT {
         // Validate the Weight in the database
         List<Weight> weightList = weightRepository.findAll();
         assertThat(weightList).hasSize(databaseSizeBeforeCreate);
+
+        // Validate the Weight in Elasticsearch
+        verify(mockWeightSearchRepository, times(0)).save(weight);
     }
 
 
@@ -515,6 +539,9 @@ public class WeightResourceIT {
         Weight testWeight = weightList.get(weightList.size() - 1);
         assertThat(testWeight.getTimestamp()).isEqualTo(UPDATED_TIMESTAMP);
         assertThat(testWeight.getWeight()).isEqualTo(UPDATED_WEIGHT);
+
+        // Validate the Weight in Elasticsearch
+        verify(mockWeightSearchRepository, times(2)).save(testWeight);
     }
 
     @Test
@@ -531,6 +558,9 @@ public class WeightResourceIT {
         // Validate the Weight in the database
         List<Weight> weightList = weightRepository.findAll();
         assertThat(weightList).hasSize(databaseSizeBeforeUpdate);
+
+        // Validate the Weight in Elasticsearch
+        verify(mockWeightSearchRepository, times(0)).save(weight);
     }
 
     @Test
@@ -549,13 +579,19 @@ public class WeightResourceIT {
         // Validate the database contains one less item
         List<Weight> weightList = weightRepository.findAll();
         assertThat(weightList).hasSize(databaseSizeBeforeDelete - 1);
+
+        // Validate the Weight in Elasticsearch
+        verify(mockWeightSearchRepository, times(1)).deleteById(weight.getId());
     }
 
     @Test
     @Transactional
     public void searchWeight() throws Exception {
+        // Configure the mock search repository
         // Initialize the database
         weightService.save(weight);
+        when(mockWeightSearchRepository.search(queryStringQuery("id:" + weight.getId()), PageRequest.of(0, 20)))
+            .thenReturn(new PageImpl<>(Collections.singletonList(weight), PageRequest.of(0, 1), 1));
 
         // Search the weight
         restWeightMockMvc.perform(get("/api/_search/weights?query=id:" + weight.getId()))

@@ -17,6 +17,7 @@ import io.github.jhipster.service.QueryService;
 import org.jhipster.health.domain.Weight;
 import org.jhipster.health.domain.*; // for static metamodels
 import org.jhipster.health.repository.WeightRepository;
+import org.jhipster.health.repository.search.WeightSearchRepository;
 import org.jhipster.health.service.dto.WeightCriteria;
 
 /**
@@ -33,8 +34,11 @@ public class WeightQueryService extends QueryService<Weight> {
 
     private final WeightRepository weightRepository;
 
-    public WeightQueryService(WeightRepository weightRepository) {
+    private final WeightSearchRepository weightSearchRepository;
+
+    public WeightQueryService(WeightRepository weightRepository, WeightSearchRepository weightSearchRepository) {
         this.weightRepository = weightRepository;
+        this.weightSearchRepository = weightSearchRepository;
     }
 
     /**
