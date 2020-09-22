@@ -21,8 +21,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
+
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -87,6 +92,9 @@ public class PointsResourceIT {
     @Autowired
     private MockMvc restPointsMockMvc;
 
+    @Autowired
+    private WebApplicationContext context;
+
     private Points points;
 
     /**
@@ -129,8 +137,15 @@ public class PointsResourceIT {
     @Transactional
     public void createPoints() throws Exception {
         int databaseSizeBeforeCreate = pointsRepository.findAll().size();
+        // Create security-aware mockMvc
+        restPointsMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(SecurityMockMvcConfigurers.springSecurity())
+            .build();
+
         // Create the Points
         restPointsMockMvc.perform(post("/api/points")
+            .with(SecurityMockMvcRequestPostProcessors.user("user"))
             .contentType(MediaType.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(points)))
             .andExpect(status().isCreated());
@@ -208,7 +223,7 @@ public class PointsResourceIT {
             .andExpect(jsonPath("$.[*].alcohol").value(hasItem(DEFAULT_ALCOHOL)))
             .andExpect(jsonPath("$.[*].notes").value(hasItem(DEFAULT_NOTES)));
     }
-    
+
     @Test
     @Transactional
     public void getPoints() throws Exception {
