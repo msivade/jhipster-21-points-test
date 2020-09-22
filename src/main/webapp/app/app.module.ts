@@ -14,10 +14,13 @@ import { FooterComponent } from './layouts/footer/footer.component';
 import { PageRibbonComponent } from './layouts/profiles/page-ribbon.component';
 import { ActiveMenuDirective } from './layouts/navbar/active-menu.directive';
 import { ErrorComponent } from './layouts/error/error.component';
+import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
 @NgModule({
   imports: [
     BrowserModule,
+    FontAwesomeModule,
     TwentyOnePointsSharedModule,
     TwentyOnePointsCoreModule,
     TwentyOnePointsHomeModule,
@@ -28,4 +31,8 @@ import { ErrorComponent } from './layouts/error/error.component';
   declarations: [MainComponent, NavbarComponent, ErrorComponent, PageRibbonComponent, ActiveMenuDirective, FooterComponent],
   bootstrap: [MainComponent],
 })
-export class TwentyOnePointsAppModule {}
+export class TwentyOnePointsAppModule {
+  constructor(library: FaIconLibrary) {
+    library.addIcons(faCheck);
+  }
+}

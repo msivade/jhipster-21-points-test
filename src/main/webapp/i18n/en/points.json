@@ -4,7 +4,7 @@
       "home": {
         "title": "Points",
         "createLabel": "Create a new Points",
-        "createOrEditLabel": "Create or edit a Points",
+        "createOrEditLabel": "Add Points",
         "search": "Search for Points",
         "notFound": "No Points found"
       },
