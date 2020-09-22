@@ -21,7 +21,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import java.util.Collections;
@@ -31,10 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.jhipster.health.domain.enumeration.Units;
+import org.springframework.web.context.WebApplicationContext;
+
 /**
  * Integration tests for the {@link PreferencesResource} REST controller.
  */
@@ -74,6 +79,9 @@ public class PreferencesResourceIT {
     @Autowired
     private MockMvc restPreferencesMockMvc;
 
+    @Autowired
+    private WebApplicationContext context;
+
     private Preferences preferences;
 
     /**
@@ -110,8 +118,16 @@ public class PreferencesResourceIT {
     @Transactional
     public void createPreferences() throws Exception {
         int databaseSizeBeforeCreate = preferencesRepository.findAll().size();
+
+        // Create security-aware mockMvc
+        restPreferencesMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(SecurityMockMvcConfigurers.springSecurity())
+            .build();
+
         // Create the Preferences
         restPreferencesMockMvc.perform(post("/api/preferences")
+            .with(user("user"))
             .contentType(MediaType.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(preferences)))
             .andExpect(status().isCreated());
@@ -183,7 +199,7 @@ public class PreferencesResourceIT {
             .andExpect(jsonPath("$.[*].weeklyGoal").value(hasItem(DEFAULT_WEEKLY_GOAL)))
             .andExpect(jsonPath("$.[*].weightUnits").value(hasItem(DEFAULT_WEIGHT_UNITS.toString())));
     }
-    
+
     @Test
     @Transactional
     public void getPreferences() throws Exception {

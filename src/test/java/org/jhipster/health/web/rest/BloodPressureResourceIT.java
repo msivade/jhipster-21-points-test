@@ -21,8 +21,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
+
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -80,6 +85,9 @@ public class BloodPressureResourceIT {
     @Autowired
     private MockMvc restBloodPressureMockMvc;
 
+    @Autowired
+    private WebApplicationContext context;
+
     private BloodPressure bloodPressure;
 
     /**
@@ -118,8 +126,15 @@ public class BloodPressureResourceIT {
     @Transactional
     public void createBloodPressure() throws Exception {
         int databaseSizeBeforeCreate = bloodPressureRepository.findAll().size();
+        // Create security-aware mockMvc
+        restBloodPressureMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(SecurityMockMvcConfigurers.springSecurity())
+            .build();
+
         // Create the BloodPressure
         restBloodPressureMockMvc.perform(post("/api/blood-pressures")
+            .with(SecurityMockMvcRequestPostProcessors.user("user"))
             .contentType(MediaType.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(bloodPressure)))
             .andExpect(status().isCreated());
@@ -231,7 +246,7 @@ public class BloodPressureResourceIT {
             .andExpect(jsonPath("$.[*].systolic").value(hasItem(DEFAULT_SYSTOLIC)))
             .andExpect(jsonPath("$.[*].diastolic").value(hasItem(DEFAULT_DIASTOLIC)));
     }
-    
+
     @Test
     @Transactional
     public void getBloodPressure() throws Exception {

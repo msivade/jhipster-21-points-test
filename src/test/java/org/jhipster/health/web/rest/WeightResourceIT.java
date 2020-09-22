@@ -21,8 +21,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
+
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -76,6 +81,9 @@ public class WeightResourceIT {
     @Autowired
     private MockMvc restWeightMockMvc;
 
+    @Autowired
+    private WebApplicationContext context;
+
     private Weight weight;
 
     /**
@@ -112,8 +120,16 @@ public class WeightResourceIT {
     @Transactional
     public void createWeight() throws Exception {
         int databaseSizeBeforeCreate = weightRepository.findAll().size();
+
+        // Create security-aware mockMvc
+        restWeightMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(SecurityMockMvcConfigurers.springSecurity())
+            .build();
+
         // Create the Weight
         restWeightMockMvc.perform(post("/api/weights")
+            .with(SecurityMockMvcRequestPostProcessors.user("user"))
             .contentType(MediaType.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(weight)))
             .andExpect(status().isCreated());
@@ -204,7 +220,7 @@ public class WeightResourceIT {
             .andExpect(jsonPath("$.[*].timestamp").value(hasItem(DEFAULT_TIMESTAMP.toString())))
             .andExpect(jsonPath("$.[*].weight").value(hasItem(DEFAULT_WEIGHT)));
     }
-    
+
     @Test
     @Transactional
     public void getWeight() throws Exception {

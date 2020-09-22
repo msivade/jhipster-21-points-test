@@ -1,7 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.Preferences;
+import org.jhipster.health.security.AuthoritiesConstants;
+import org.jhipster.health.security.SecurityUtils;
 import org.jhipster.health.service.PreferencesService;
+import org.jhipster.health.service.UserService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
 import org.jhipster.health.service.dto.PreferencesCriteria;
 import org.jhipster.health.service.PreferencesQueryService;
@@ -47,9 +50,14 @@ public class PreferencesResource {
 
     private final PreferencesQueryService preferencesQueryService;
 
-    public PreferencesResource(PreferencesService preferencesService, PreferencesQueryService preferencesQueryService) {
+    private final UserService userService;
+
+    public PreferencesResource(PreferencesService preferencesService,
+                               PreferencesQueryService preferencesQueryService,
+                               UserService userService) {
         this.preferencesService = preferencesService;
         this.preferencesQueryService = preferencesQueryService;
+        this.userService = userService;
     }
 
     /**
@@ -64,6 +72,10 @@ public class PreferencesResource {
         log.debug("REST request to save Preferences : {}", preferences);
         if (preferences.getId() != null) {
             throw new BadRequestAlertException("A new preferences cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)){
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            preferences.setUser(userService.getUserWithAuthoritiesByLogin(SecurityUtils.getCurrentUserLogin().get()).get());
         }
         Preferences result = preferencesService.save(preferences);
         return ResponseEntity.created(new URI("/api/preferences/" + result.getId()))

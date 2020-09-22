@@ -1,7 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.BloodPressure;
+import org.jhipster.health.security.AuthoritiesConstants;
+import org.jhipster.health.security.SecurityUtils;
 import org.jhipster.health.service.BloodPressureService;
+import org.jhipster.health.service.UserService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
 import org.jhipster.health.service.dto.BloodPressureCriteria;
 import org.jhipster.health.service.BloodPressureQueryService;
@@ -47,9 +50,14 @@ public class BloodPressureResource {
 
     private final BloodPressureQueryService bloodPressureQueryService;
 
-    public BloodPressureResource(BloodPressureService bloodPressureService, BloodPressureQueryService bloodPressureQueryService) {
+    private final UserService userService;
+
+    public BloodPressureResource(BloodPressureService bloodPressureService,
+                                 BloodPressureQueryService bloodPressureQueryService,
+                                 UserService userService) {
         this.bloodPressureService = bloodPressureService;
         this.bloodPressureQueryService = bloodPressureQueryService;
+        this.userService = userService;
     }
 
     /**
@@ -64,6 +72,10 @@ public class BloodPressureResource {
         log.debug("REST request to save BloodPressure : {}", bloodPressure);
         if (bloodPressure.getId() != null) {
             throw new BadRequestAlertException("A new bloodPressure cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)){
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            bloodPressure.setUser(userService.getUserWithAuthoritiesByLogin(SecurityUtils.getCurrentUserLogin().get()).get());
         }
         BloodPressure result = bloodPressureService.save(bloodPressure);
         return ResponseEntity.created(new URI("/api/blood-pressures/" + result.getId()))

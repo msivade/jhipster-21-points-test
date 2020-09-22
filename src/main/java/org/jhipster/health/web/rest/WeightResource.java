@@ -1,6 +1,9 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.Weight;
+import org.jhipster.health.security.AuthoritiesConstants;
+import org.jhipster.health.security.SecurityUtils;
+import org.jhipster.health.service.UserService;
 import org.jhipster.health.service.WeightService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
 import org.jhipster.health.service.dto.WeightCriteria;
@@ -47,9 +50,14 @@ public class WeightResource {
 
     private final WeightQueryService weightQueryService;
 
-    public WeightResource(WeightService weightService, WeightQueryService weightQueryService) {
+    private final UserService userService;
+
+    public WeightResource(WeightService weightService,
+                          WeightQueryService weightQueryService,
+                          UserService userService) {
         this.weightService = weightService;
         this.weightQueryService = weightQueryService;
+        this.userService = userService;
     }
 
     /**
@@ -64,6 +72,10 @@ public class WeightResource {
         log.debug("REST request to save Weight : {}", weight);
         if (weight.getId() != null) {
             throw new BadRequestAlertException("A new weight cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)){
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            weight.setUser(userService.getUserWithAuthoritiesByLogin(SecurityUtils.getCurrentUserLogin().get()).get());
         }
         Weight result = weightService.save(weight);
         return ResponseEntity.created(new URI("/api/weights/" + result.getId()))
