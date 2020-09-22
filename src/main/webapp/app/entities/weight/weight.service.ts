@@ -6,7 +6,7 @@ import * as moment from 'moment';
 
 import { DATE_FORMAT } from 'app/shared/constants/input.constants';
 import { SERVER_API_URL } from 'app/app.constants';
-import { createRequestOption } from 'app/shared/util/request-util';
+import { createRequestOption, SearchWithPagination } from 'app/shared/util/request-util';
 import { IWeight } from 'app/shared/model/weight.model';
 
 type EntityResponseType = HttpResponse<IWeight>;
@@ -15,6 +15,7 @@ type EntityArrayResponseType = HttpResponse<IWeight[]>;
 @Injectable({ providedIn: 'root' })
 export class WeightService {
   public resourceUrl = SERVER_API_URL + 'api/weights';
+  public resourceSearchUrl = SERVER_API_URL + 'api/_search/weights';
 
   constructor(protected http: HttpClient) {}
 
@@ -47,6 +48,13 @@ export class WeightService {
 
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+  }
+
+  search(req: SearchWithPagination): Observable<EntityArrayResponseType> {
+    const options = createRequestOption(req);
+    return this.http
+      .get<IWeight[]>(this.resourceSearchUrl, { params: options, observe: 'response' })
+      .pipe(map((res: EntityArrayResponseType) => this.convertDateArrayFromServer(res)));
   }
 
   protected convertDateFromClient(weight: IWeight): IWeight {

@@ -1,8 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.Weight;
-import org.jhipster.health.repository.WeightRepository;
+import org.jhipster.health.service.WeightService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
+import org.jhipster.health.service.dto.WeightCriteria;
+import org.jhipster.health.service.WeightQueryService;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -16,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -24,13 +25,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 /**
  * REST controller for managing {@link org.jhipster.health.domain.Weight}.
  */
 @RestController
 @RequestMapping("/api")
-@Transactional
 public class WeightResource {
 
     private final Logger log = LoggerFactory.getLogger(WeightResource.class);
@@ -40,10 +41,13 @@ public class WeightResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
-    private final WeightRepository weightRepository;
+    private final WeightService weightService;
 
-    public WeightResource(WeightRepository weightRepository) {
-        this.weightRepository = weightRepository;
+    private final WeightQueryService weightQueryService;
+
+    public WeightResource(WeightService weightService, WeightQueryService weightQueryService) {
+        this.weightService = weightService;
+        this.weightQueryService = weightQueryService;
     }
 
     /**
@@ -59,7 +63,7 @@ public class WeightResource {
         if (weight.getId() != null) {
             throw new BadRequestAlertException("A new weight cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        Weight result = weightRepository.save(weight);
+        Weight result = weightService.save(weight);
         return ResponseEntity.created(new URI("/api/weights/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -80,7 +84,7 @@ public class WeightResource {
         if (weight.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        Weight result = weightRepository.save(weight);
+        Weight result = weightService.save(weight);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, weight.getId().toString()))
             .body(result);
@@ -90,14 +94,27 @@ public class WeightResource {
      * {@code GET  /weights} : get all the weights.
      *
      * @param pageable the pagination information.
+     * @param criteria the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of weights in body.
      */
     @GetMapping("/weights")
-    public ResponseEntity<List<Weight>> getAllWeights(Pageable pageable) {
-        log.debug("REST request to get a page of Weights");
-        Page<Weight> page = weightRepository.findAll(pageable);
+    public ResponseEntity<List<Weight>> getAllWeights(WeightCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get Weights by criteria: {}", criteria);
+        Page<Weight> page = weightQueryService.findByCriteria(criteria, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /weights/count} : count all the weights.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/weights/count")
+    public ResponseEntity<Long> countWeights(WeightCriteria criteria) {
+        log.debug("REST request to count Weights by criteria: {}", criteria);
+        return ResponseEntity.ok().body(weightQueryService.countByCriteria(criteria));
     }
 
     /**
@@ -109,7 +126,7 @@ public class WeightResource {
     @GetMapping("/weights/{id}")
     public ResponseEntity<Weight> getWeight(@PathVariable Long id) {
         log.debug("REST request to get Weight : {}", id);
-        Optional<Weight> weight = weightRepository.findById(id);
+        Optional<Weight> weight = weightService.findOne(id);
         return ResponseUtil.wrapOrNotFound(weight);
     }
 
@@ -122,7 +139,23 @@ public class WeightResource {
     @DeleteMapping("/weights/{id}")
     public ResponseEntity<Void> deleteWeight(@PathVariable Long id) {
         log.debug("REST request to delete Weight : {}", id);
-        weightRepository.deleteById(id);
+        weightService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
     }
+
+    /**
+     * {@code SEARCH  /_search/weights?query=:query} : search for the weight corresponding
+     * to the query.
+     *
+     * @param query the query of the weight search.
+     * @param pageable the pagination information.
+     * @return the result of the search.
+     */
+    @GetMapping("/_search/weights")
+    public ResponseEntity<List<Weight>> searchWeights(@RequestParam String query, Pageable pageable) {
+        log.debug("REST request to search for a page of Weights for query {}", query);
+        Page<Weight> page = weightService.search(query, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        }
 }

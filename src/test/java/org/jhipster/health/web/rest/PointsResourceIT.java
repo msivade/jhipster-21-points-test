@@ -2,7 +2,11 @@ package org.jhipster.health.web.rest;
 
 import org.jhipster.health.TwentyOnePointsApp;
 import org.jhipster.health.domain.Points;
+import org.jhipster.health.domain.User;
 import org.jhipster.health.repository.PointsRepository;
+import org.jhipster.health.service.PointsService;
+import org.jhipster.health.service.dto.PointsCriteria;
+import org.jhipster.health.service.PointsQueryService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,21 +37,31 @@ public class PointsResourceIT {
 
     private static final LocalDate DEFAULT_DATE = LocalDate.ofEpochDay(0L);
     private static final LocalDate UPDATED_DATE = LocalDate.now(ZoneId.systemDefault());
+    private static final LocalDate SMALLER_DATE = LocalDate.ofEpochDay(-1L);
 
     private static final Integer DEFAULT_EXERCISE = 1;
     private static final Integer UPDATED_EXERCISE = 2;
+    private static final Integer SMALLER_EXERCISE = 1 - 1;
 
     private static final Integer DEFAULT_MEALS = 1;
     private static final Integer UPDATED_MEALS = 2;
+    private static final Integer SMALLER_MEALS = 1 - 1;
 
     private static final Integer DEFAULT_ALCOHOL = 1;
     private static final Integer UPDATED_ALCOHOL = 2;
+    private static final Integer SMALLER_ALCOHOL = 1 - 1;
 
     private static final String DEFAULT_NOTES = "AAAAAAAAAA";
     private static final String UPDATED_NOTES = "BBBBBBBBBB";
 
     @Autowired
     private PointsRepository pointsRepository;
+
+    @Autowired
+    private PointsService pointsService;
+
+    @Autowired
+    private PointsQueryService pointsQueryService;
 
     @Autowired
     private EntityManager em;
@@ -188,6 +202,582 @@ public class PointsResourceIT {
             .andExpect(jsonPath("$.alcohol").value(DEFAULT_ALCOHOL))
             .andExpect(jsonPath("$.notes").value(DEFAULT_NOTES));
     }
+
+
+    @Test
+    @Transactional
+    public void getPointsByIdFiltering() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        Long id = points.getId();
+
+        defaultPointsShouldBeFound("id.equals=" + id);
+        defaultPointsShouldNotBeFound("id.notEquals=" + id);
+
+        defaultPointsShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultPointsShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultPointsShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultPointsShouldNotBeFound("id.lessThan=" + id);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date equals to DEFAULT_DATE
+        defaultPointsShouldBeFound("date.equals=" + DEFAULT_DATE);
+
+        // Get all the pointsList where date equals to UPDATED_DATE
+        defaultPointsShouldNotBeFound("date.equals=" + UPDATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date not equals to DEFAULT_DATE
+        defaultPointsShouldNotBeFound("date.notEquals=" + DEFAULT_DATE);
+
+        // Get all the pointsList where date not equals to UPDATED_DATE
+        defaultPointsShouldBeFound("date.notEquals=" + UPDATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsInShouldWork() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date in DEFAULT_DATE or UPDATED_DATE
+        defaultPointsShouldBeFound("date.in=" + DEFAULT_DATE + "," + UPDATED_DATE);
+
+        // Get all the pointsList where date equals to UPDATED_DATE
+        defaultPointsShouldNotBeFound("date.in=" + UPDATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date is not null
+        defaultPointsShouldBeFound("date.specified=true");
+
+        // Get all the pointsList where date is null
+        defaultPointsShouldNotBeFound("date.specified=false");
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date is greater than or equal to DEFAULT_DATE
+        defaultPointsShouldBeFound("date.greaterThanOrEqual=" + DEFAULT_DATE);
+
+        // Get all the pointsList where date is greater than or equal to UPDATED_DATE
+        defaultPointsShouldNotBeFound("date.greaterThanOrEqual=" + UPDATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date is less than or equal to DEFAULT_DATE
+        defaultPointsShouldBeFound("date.lessThanOrEqual=" + DEFAULT_DATE);
+
+        // Get all the pointsList where date is less than or equal to SMALLER_DATE
+        defaultPointsShouldNotBeFound("date.lessThanOrEqual=" + SMALLER_DATE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsLessThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date is less than DEFAULT_DATE
+        defaultPointsShouldNotBeFound("date.lessThan=" + DEFAULT_DATE);
+
+        // Get all the pointsList where date is less than UPDATED_DATE
+        defaultPointsShouldBeFound("date.lessThan=" + UPDATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByDateIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where date is greater than DEFAULT_DATE
+        defaultPointsShouldNotBeFound("date.greaterThan=" + DEFAULT_DATE);
+
+        // Get all the pointsList where date is greater than SMALLER_DATE
+        defaultPointsShouldBeFound("date.greaterThan=" + SMALLER_DATE);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise equals to DEFAULT_EXERCISE
+        defaultPointsShouldBeFound("exercise.equals=" + DEFAULT_EXERCISE);
+
+        // Get all the pointsList where exercise equals to UPDATED_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.equals=" + UPDATED_EXERCISE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise not equals to DEFAULT_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.notEquals=" + DEFAULT_EXERCISE);
+
+        // Get all the pointsList where exercise not equals to UPDATED_EXERCISE
+        defaultPointsShouldBeFound("exercise.notEquals=" + UPDATED_EXERCISE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsInShouldWork() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise in DEFAULT_EXERCISE or UPDATED_EXERCISE
+        defaultPointsShouldBeFound("exercise.in=" + DEFAULT_EXERCISE + "," + UPDATED_EXERCISE);
+
+        // Get all the pointsList where exercise equals to UPDATED_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.in=" + UPDATED_EXERCISE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise is not null
+        defaultPointsShouldBeFound("exercise.specified=true");
+
+        // Get all the pointsList where exercise is null
+        defaultPointsShouldNotBeFound("exercise.specified=false");
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise is greater than or equal to DEFAULT_EXERCISE
+        defaultPointsShouldBeFound("exercise.greaterThanOrEqual=" + DEFAULT_EXERCISE);
+
+        // Get all the pointsList where exercise is greater than or equal to UPDATED_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.greaterThanOrEqual=" + UPDATED_EXERCISE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise is less than or equal to DEFAULT_EXERCISE
+        defaultPointsShouldBeFound("exercise.lessThanOrEqual=" + DEFAULT_EXERCISE);
+
+        // Get all the pointsList where exercise is less than or equal to SMALLER_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.lessThanOrEqual=" + SMALLER_EXERCISE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsLessThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise is less than DEFAULT_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.lessThan=" + DEFAULT_EXERCISE);
+
+        // Get all the pointsList where exercise is less than UPDATED_EXERCISE
+        defaultPointsShouldBeFound("exercise.lessThan=" + UPDATED_EXERCISE);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByExerciseIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where exercise is greater than DEFAULT_EXERCISE
+        defaultPointsShouldNotBeFound("exercise.greaterThan=" + DEFAULT_EXERCISE);
+
+        // Get all the pointsList where exercise is greater than SMALLER_EXERCISE
+        defaultPointsShouldBeFound("exercise.greaterThan=" + SMALLER_EXERCISE);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals equals to DEFAULT_MEALS
+        defaultPointsShouldBeFound("meals.equals=" + DEFAULT_MEALS);
+
+        // Get all the pointsList where meals equals to UPDATED_MEALS
+        defaultPointsShouldNotBeFound("meals.equals=" + UPDATED_MEALS);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals not equals to DEFAULT_MEALS
+        defaultPointsShouldNotBeFound("meals.notEquals=" + DEFAULT_MEALS);
+
+        // Get all the pointsList where meals not equals to UPDATED_MEALS
+        defaultPointsShouldBeFound("meals.notEquals=" + UPDATED_MEALS);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsInShouldWork() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals in DEFAULT_MEALS or UPDATED_MEALS
+        defaultPointsShouldBeFound("meals.in=" + DEFAULT_MEALS + "," + UPDATED_MEALS);
+
+        // Get all the pointsList where meals equals to UPDATED_MEALS
+        defaultPointsShouldNotBeFound("meals.in=" + UPDATED_MEALS);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals is not null
+        defaultPointsShouldBeFound("meals.specified=true");
+
+        // Get all the pointsList where meals is null
+        defaultPointsShouldNotBeFound("meals.specified=false");
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals is greater than or equal to DEFAULT_MEALS
+        defaultPointsShouldBeFound("meals.greaterThanOrEqual=" + DEFAULT_MEALS);
+
+        // Get all the pointsList where meals is greater than or equal to UPDATED_MEALS
+        defaultPointsShouldNotBeFound("meals.greaterThanOrEqual=" + UPDATED_MEALS);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals is less than or equal to DEFAULT_MEALS
+        defaultPointsShouldBeFound("meals.lessThanOrEqual=" + DEFAULT_MEALS);
+
+        // Get all the pointsList where meals is less than or equal to SMALLER_MEALS
+        defaultPointsShouldNotBeFound("meals.lessThanOrEqual=" + SMALLER_MEALS);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsLessThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals is less than DEFAULT_MEALS
+        defaultPointsShouldNotBeFound("meals.lessThan=" + DEFAULT_MEALS);
+
+        // Get all the pointsList where meals is less than UPDATED_MEALS
+        defaultPointsShouldBeFound("meals.lessThan=" + UPDATED_MEALS);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByMealsIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where meals is greater than DEFAULT_MEALS
+        defaultPointsShouldNotBeFound("meals.greaterThan=" + DEFAULT_MEALS);
+
+        // Get all the pointsList where meals is greater than SMALLER_MEALS
+        defaultPointsShouldBeFound("meals.greaterThan=" + SMALLER_MEALS);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol equals to DEFAULT_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.equals=" + DEFAULT_ALCOHOL);
+
+        // Get all the pointsList where alcohol equals to UPDATED_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.equals=" + UPDATED_ALCOHOL);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol not equals to DEFAULT_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.notEquals=" + DEFAULT_ALCOHOL);
+
+        // Get all the pointsList where alcohol not equals to UPDATED_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.notEquals=" + UPDATED_ALCOHOL);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsInShouldWork() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol in DEFAULT_ALCOHOL or UPDATED_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.in=" + DEFAULT_ALCOHOL + "," + UPDATED_ALCOHOL);
+
+        // Get all the pointsList where alcohol equals to UPDATED_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.in=" + UPDATED_ALCOHOL);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol is not null
+        defaultPointsShouldBeFound("alcohol.specified=true");
+
+        // Get all the pointsList where alcohol is null
+        defaultPointsShouldNotBeFound("alcohol.specified=false");
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol is greater than or equal to DEFAULT_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.greaterThanOrEqual=" + DEFAULT_ALCOHOL);
+
+        // Get all the pointsList where alcohol is greater than or equal to UPDATED_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.greaterThanOrEqual=" + UPDATED_ALCOHOL);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol is less than or equal to DEFAULT_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.lessThanOrEqual=" + DEFAULT_ALCOHOL);
+
+        // Get all the pointsList where alcohol is less than or equal to SMALLER_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.lessThanOrEqual=" + SMALLER_ALCOHOL);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsLessThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol is less than DEFAULT_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.lessThan=" + DEFAULT_ALCOHOL);
+
+        // Get all the pointsList where alcohol is less than UPDATED_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.lessThan=" + UPDATED_ALCOHOL);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByAlcoholIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where alcohol is greater than DEFAULT_ALCOHOL
+        defaultPointsShouldNotBeFound("alcohol.greaterThan=" + DEFAULT_ALCOHOL);
+
+        // Get all the pointsList where alcohol is greater than SMALLER_ALCOHOL
+        defaultPointsShouldBeFound("alcohol.greaterThan=" + SMALLER_ALCOHOL);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllPointsByNotesIsEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where notes equals to DEFAULT_NOTES
+        defaultPointsShouldBeFound("notes.equals=" + DEFAULT_NOTES);
+
+        // Get all the pointsList where notes equals to UPDATED_NOTES
+        defaultPointsShouldNotBeFound("notes.equals=" + UPDATED_NOTES);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByNotesIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where notes not equals to DEFAULT_NOTES
+        defaultPointsShouldNotBeFound("notes.notEquals=" + DEFAULT_NOTES);
+
+        // Get all the pointsList where notes not equals to UPDATED_NOTES
+        defaultPointsShouldBeFound("notes.notEquals=" + UPDATED_NOTES);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByNotesIsInShouldWork() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where notes in DEFAULT_NOTES or UPDATED_NOTES
+        defaultPointsShouldBeFound("notes.in=" + DEFAULT_NOTES + "," + UPDATED_NOTES);
+
+        // Get all the pointsList where notes equals to UPDATED_NOTES
+        defaultPointsShouldNotBeFound("notes.in=" + UPDATED_NOTES);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByNotesIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where notes is not null
+        defaultPointsShouldBeFound("notes.specified=true");
+
+        // Get all the pointsList where notes is null
+        defaultPointsShouldNotBeFound("notes.specified=false");
+    }
+                @Test
+    @Transactional
+    public void getAllPointsByNotesContainsSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where notes contains DEFAULT_NOTES
+        defaultPointsShouldBeFound("notes.contains=" + DEFAULT_NOTES);
+
+        // Get all the pointsList where notes contains UPDATED_NOTES
+        defaultPointsShouldNotBeFound("notes.contains=" + UPDATED_NOTES);
+    }
+
+    @Test
+    @Transactional
+    public void getAllPointsByNotesNotContainsSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+
+        // Get all the pointsList where notes does not contain DEFAULT_NOTES
+        defaultPointsShouldNotBeFound("notes.doesNotContain=" + DEFAULT_NOTES);
+
+        // Get all the pointsList where notes does not contain UPDATED_NOTES
+        defaultPointsShouldBeFound("notes.doesNotContain=" + UPDATED_NOTES);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllPointsByUserIsEqualToSomething() throws Exception {
+        // Initialize the database
+        pointsRepository.saveAndFlush(points);
+        User user = UserResourceIT.createEntity(em);
+        em.persist(user);
+        em.flush();
+        points.setUser(user);
+        pointsRepository.saveAndFlush(points);
+        Long userId = user.getId();
+
+        // Get all the pointsList where user equals to userId
+        defaultPointsShouldBeFound("userId.equals=" + userId);
+
+        // Get all the pointsList where user equals to userId + 1
+        defaultPointsShouldNotBeFound("userId.equals=" + (userId + 1));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultPointsShouldBeFound(String filter) throws Exception {
+        restPointsMockMvc.perform(get("/api/points?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(points.getId().intValue())))
+            .andExpect(jsonPath("$.[*].date").value(hasItem(DEFAULT_DATE.toString())))
+            .andExpect(jsonPath("$.[*].exercise").value(hasItem(DEFAULT_EXERCISE)))
+            .andExpect(jsonPath("$.[*].meals").value(hasItem(DEFAULT_MEALS)))
+            .andExpect(jsonPath("$.[*].alcohol").value(hasItem(DEFAULT_ALCOHOL)))
+            .andExpect(jsonPath("$.[*].notes").value(hasItem(DEFAULT_NOTES)));
+
+        // Check, that the count call also returns 1
+        restPointsMockMvc.perform(get("/api/points/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultPointsShouldNotBeFound(String filter) throws Exception {
+        restPointsMockMvc.perform(get("/api/points?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restPointsMockMvc.perform(get("/api/points/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
+    }
+
     @Test
     @Transactional
     public void getNonExistingPoints() throws Exception {
@@ -200,7 +790,7 @@ public class PointsResourceIT {
     @Transactional
     public void updatePoints() throws Exception {
         // Initialize the database
-        pointsRepository.saveAndFlush(points);
+        pointsService.save(points);
 
         int databaseSizeBeforeUpdate = pointsRepository.findAll().size();
 
@@ -251,7 +841,7 @@ public class PointsResourceIT {
     @Transactional
     public void deletePoints() throws Exception {
         // Initialize the database
-        pointsRepository.saveAndFlush(points);
+        pointsService.save(points);
 
         int databaseSizeBeforeDelete = pointsRepository.findAll().size();
 
@@ -263,5 +853,23 @@ public class PointsResourceIT {
         // Validate the database contains one less item
         List<Points> pointsList = pointsRepository.findAll();
         assertThat(pointsList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @Transactional
+    public void searchPoints() throws Exception {
+        // Initialize the database
+        pointsService.save(points);
+
+        // Search the points
+        restPointsMockMvc.perform(get("/api/_search/points?query=id:" + points.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(points.getId().intValue())))
+            .andExpect(jsonPath("$.[*].date").value(hasItem(DEFAULT_DATE.toString())))
+            .andExpect(jsonPath("$.[*].exercise").value(hasItem(DEFAULT_EXERCISE)))
+            .andExpect(jsonPath("$.[*].meals").value(hasItem(DEFAULT_MEALS)))
+            .andExpect(jsonPath("$.[*].alcohol").value(hasItem(DEFAULT_ALCOHOL)))
+            .andExpect(jsonPath("$.[*].notes").value(hasItem(DEFAULT_NOTES)));
     }
 }

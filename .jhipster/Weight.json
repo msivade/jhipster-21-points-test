@@ -25,11 +25,11 @@
   ],
   "changelogDate": "20200921125815",
   "dto": "no",
-  "searchEngine": false,
-  "service": "no",
+  "searchEngine": true,
+  "service": "serviceImpl",
   "entityTableName": "weight",
   "databaseType": "sql",
   "readOnly": false,
-  "jpaMetamodelFiltering": false,
+  "jpaMetamodelFiltering": true,
   "pagination": "pagination"
 }

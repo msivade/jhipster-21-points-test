@@ -2,7 +2,11 @@ package org.jhipster.health.web.rest;
 
 import org.jhipster.health.TwentyOnePointsApp;
 import org.jhipster.health.domain.Weight;
+import org.jhipster.health.domain.User;
 import org.jhipster.health.repository.WeightRepository;
+import org.jhipster.health.service.WeightService;
+import org.jhipster.health.service.dto.WeightCriteria;
+import org.jhipster.health.service.WeightQueryService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,12 +37,20 @@ public class WeightResourceIT {
 
     private static final LocalDate DEFAULT_TIMESTAMP = LocalDate.ofEpochDay(0L);
     private static final LocalDate UPDATED_TIMESTAMP = LocalDate.now(ZoneId.systemDefault());
+    private static final LocalDate SMALLER_TIMESTAMP = LocalDate.ofEpochDay(-1L);
 
     private static final Integer DEFAULT_WEIGHT = 1;
     private static final Integer UPDATED_WEIGHT = 2;
+    private static final Integer SMALLER_WEIGHT = 1 - 1;
 
     @Autowired
     private WeightRepository weightRepository;
+
+    @Autowired
+    private WeightService weightService;
+
+    @Autowired
+    private WeightQueryService weightQueryService;
 
     @Autowired
     private EntityManager em;
@@ -183,6 +195,291 @@ public class WeightResourceIT {
             .andExpect(jsonPath("$.timestamp").value(DEFAULT_TIMESTAMP.toString()))
             .andExpect(jsonPath("$.weight").value(DEFAULT_WEIGHT));
     }
+
+
+    @Test
+    @Transactional
+    public void getWeightsByIdFiltering() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        Long id = weight.getId();
+
+        defaultWeightShouldBeFound("id.equals=" + id);
+        defaultWeightShouldNotBeFound("id.notEquals=" + id);
+
+        defaultWeightShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultWeightShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultWeightShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultWeightShouldNotBeFound("id.lessThan=" + id);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp equals to DEFAULT_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.equals=" + DEFAULT_TIMESTAMP);
+
+        // Get all the weightList where timestamp equals to UPDATED_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.equals=" + UPDATED_TIMESTAMP);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp not equals to DEFAULT_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.notEquals=" + DEFAULT_TIMESTAMP);
+
+        // Get all the weightList where timestamp not equals to UPDATED_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.notEquals=" + UPDATED_TIMESTAMP);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsInShouldWork() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp in DEFAULT_TIMESTAMP or UPDATED_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.in=" + DEFAULT_TIMESTAMP + "," + UPDATED_TIMESTAMP);
+
+        // Get all the weightList where timestamp equals to UPDATED_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.in=" + UPDATED_TIMESTAMP);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp is not null
+        defaultWeightShouldBeFound("timestamp.specified=true");
+
+        // Get all the weightList where timestamp is null
+        defaultWeightShouldNotBeFound("timestamp.specified=false");
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp is greater than or equal to DEFAULT_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.greaterThanOrEqual=" + DEFAULT_TIMESTAMP);
+
+        // Get all the weightList where timestamp is greater than or equal to UPDATED_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.greaterThanOrEqual=" + UPDATED_TIMESTAMP);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp is less than or equal to DEFAULT_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.lessThanOrEqual=" + DEFAULT_TIMESTAMP);
+
+        // Get all the weightList where timestamp is less than or equal to SMALLER_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.lessThanOrEqual=" + SMALLER_TIMESTAMP);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsLessThanSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp is less than DEFAULT_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.lessThan=" + DEFAULT_TIMESTAMP);
+
+        // Get all the weightList where timestamp is less than UPDATED_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.lessThan=" + UPDATED_TIMESTAMP);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByTimestampIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where timestamp is greater than DEFAULT_TIMESTAMP
+        defaultWeightShouldNotBeFound("timestamp.greaterThan=" + DEFAULT_TIMESTAMP);
+
+        // Get all the weightList where timestamp is greater than SMALLER_TIMESTAMP
+        defaultWeightShouldBeFound("timestamp.greaterThan=" + SMALLER_TIMESTAMP);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight equals to DEFAULT_WEIGHT
+        defaultWeightShouldBeFound("weight.equals=" + DEFAULT_WEIGHT);
+
+        // Get all the weightList where weight equals to UPDATED_WEIGHT
+        defaultWeightShouldNotBeFound("weight.equals=" + UPDATED_WEIGHT);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight not equals to DEFAULT_WEIGHT
+        defaultWeightShouldNotBeFound("weight.notEquals=" + DEFAULT_WEIGHT);
+
+        // Get all the weightList where weight not equals to UPDATED_WEIGHT
+        defaultWeightShouldBeFound("weight.notEquals=" + UPDATED_WEIGHT);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsInShouldWork() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight in DEFAULT_WEIGHT or UPDATED_WEIGHT
+        defaultWeightShouldBeFound("weight.in=" + DEFAULT_WEIGHT + "," + UPDATED_WEIGHT);
+
+        // Get all the weightList where weight equals to UPDATED_WEIGHT
+        defaultWeightShouldNotBeFound("weight.in=" + UPDATED_WEIGHT);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight is not null
+        defaultWeightShouldBeFound("weight.specified=true");
+
+        // Get all the weightList where weight is null
+        defaultWeightShouldNotBeFound("weight.specified=false");
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight is greater than or equal to DEFAULT_WEIGHT
+        defaultWeightShouldBeFound("weight.greaterThanOrEqual=" + DEFAULT_WEIGHT);
+
+        // Get all the weightList where weight is greater than or equal to UPDATED_WEIGHT
+        defaultWeightShouldNotBeFound("weight.greaterThanOrEqual=" + UPDATED_WEIGHT);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight is less than or equal to DEFAULT_WEIGHT
+        defaultWeightShouldBeFound("weight.lessThanOrEqual=" + DEFAULT_WEIGHT);
+
+        // Get all the weightList where weight is less than or equal to SMALLER_WEIGHT
+        defaultWeightShouldNotBeFound("weight.lessThanOrEqual=" + SMALLER_WEIGHT);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsLessThanSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight is less than DEFAULT_WEIGHT
+        defaultWeightShouldNotBeFound("weight.lessThan=" + DEFAULT_WEIGHT);
+
+        // Get all the weightList where weight is less than UPDATED_WEIGHT
+        defaultWeightShouldBeFound("weight.lessThan=" + UPDATED_WEIGHT);
+    }
+
+    @Test
+    @Transactional
+    public void getAllWeightsByWeightIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+
+        // Get all the weightList where weight is greater than DEFAULT_WEIGHT
+        defaultWeightShouldNotBeFound("weight.greaterThan=" + DEFAULT_WEIGHT);
+
+        // Get all the weightList where weight is greater than SMALLER_WEIGHT
+        defaultWeightShouldBeFound("weight.greaterThan=" + SMALLER_WEIGHT);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllWeightsByUserIsEqualToSomething() throws Exception {
+        // Initialize the database
+        weightRepository.saveAndFlush(weight);
+        User user = UserResourceIT.createEntity(em);
+        em.persist(user);
+        em.flush();
+        weight.setUser(user);
+        weightRepository.saveAndFlush(weight);
+        Long userId = user.getId();
+
+        // Get all the weightList where user equals to userId
+        defaultWeightShouldBeFound("userId.equals=" + userId);
+
+        // Get all the weightList where user equals to userId + 1
+        defaultWeightShouldNotBeFound("userId.equals=" + (userId + 1));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultWeightShouldBeFound(String filter) throws Exception {
+        restWeightMockMvc.perform(get("/api/weights?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(weight.getId().intValue())))
+            .andExpect(jsonPath("$.[*].timestamp").value(hasItem(DEFAULT_TIMESTAMP.toString())))
+            .andExpect(jsonPath("$.[*].weight").value(hasItem(DEFAULT_WEIGHT)));
+
+        // Check, that the count call also returns 1
+        restWeightMockMvc.perform(get("/api/weights/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultWeightShouldNotBeFound(String filter) throws Exception {
+        restWeightMockMvc.perform(get("/api/weights?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restWeightMockMvc.perform(get("/api/weights/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
+    }
+
     @Test
     @Transactional
     public void getNonExistingWeight() throws Exception {
@@ -195,7 +492,7 @@ public class WeightResourceIT {
     @Transactional
     public void updateWeight() throws Exception {
         // Initialize the database
-        weightRepository.saveAndFlush(weight);
+        weightService.save(weight);
 
         int databaseSizeBeforeUpdate = weightRepository.findAll().size();
 
@@ -240,7 +537,7 @@ public class WeightResourceIT {
     @Transactional
     public void deleteWeight() throws Exception {
         // Initialize the database
-        weightRepository.saveAndFlush(weight);
+        weightService.save(weight);
 
         int databaseSizeBeforeDelete = weightRepository.findAll().size();
 
@@ -252,5 +549,20 @@ public class WeightResourceIT {
         // Validate the database contains one less item
         List<Weight> weightList = weightRepository.findAll();
         assertThat(weightList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @Transactional
+    public void searchWeight() throws Exception {
+        // Initialize the database
+        weightService.save(weight);
+
+        // Search the weight
+        restWeightMockMvc.perform(get("/api/_search/weights?query=id:" + weight.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(weight.getId().intValue())))
+            .andExpect(jsonPath("$.[*].timestamp").value(hasItem(DEFAULT_TIMESTAMP.toString())))
+            .andExpect(jsonPath("$.[*].weight").value(hasItem(DEFAULT_WEIGHT)));
     }
 }

@@ -1,8 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.Points;
-import org.jhipster.health.repository.PointsRepository;
+import org.jhipster.health.service.PointsService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
+import org.jhipster.health.service.dto.PointsCriteria;
+import org.jhipster.health.service.PointsQueryService;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -16,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -24,13 +25,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 /**
  * REST controller for managing {@link org.jhipster.health.domain.Points}.
  */
 @RestController
 @RequestMapping("/api")
-@Transactional
 public class PointsResource {
 
     private final Logger log = LoggerFactory.getLogger(PointsResource.class);
@@ -40,10 +41,13 @@ public class PointsResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
-    private final PointsRepository pointsRepository;
+    private final PointsService pointsService;
 
-    public PointsResource(PointsRepository pointsRepository) {
-        this.pointsRepository = pointsRepository;
+    private final PointsQueryService pointsQueryService;
+
+    public PointsResource(PointsService pointsService, PointsQueryService pointsQueryService) {
+        this.pointsService = pointsService;
+        this.pointsQueryService = pointsQueryService;
     }
 
     /**
@@ -59,7 +63,7 @@ public class PointsResource {
         if (points.getId() != null) {
             throw new BadRequestAlertException("A new points cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        Points result = pointsRepository.save(points);
+        Points result = pointsService.save(points);
         return ResponseEntity.created(new URI("/api/points/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -80,7 +84,7 @@ public class PointsResource {
         if (points.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        Points result = pointsRepository.save(points);
+        Points result = pointsService.save(points);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, points.getId().toString()))
             .body(result);
@@ -90,14 +94,27 @@ public class PointsResource {
      * {@code GET  /points} : get all the points.
      *
      * @param pageable the pagination information.
+     * @param criteria the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of points in body.
      */
     @GetMapping("/points")
-    public ResponseEntity<List<Points>> getAllPoints(Pageable pageable) {
-        log.debug("REST request to get a page of Points");
-        Page<Points> page = pointsRepository.findAll(pageable);
+    public ResponseEntity<List<Points>> getAllPoints(PointsCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get Points by criteria: {}", criteria);
+        Page<Points> page = pointsQueryService.findByCriteria(criteria, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /points/count} : count all the points.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/points/count")
+    public ResponseEntity<Long> countPoints(PointsCriteria criteria) {
+        log.debug("REST request to count Points by criteria: {}", criteria);
+        return ResponseEntity.ok().body(pointsQueryService.countByCriteria(criteria));
     }
 
     /**
@@ -109,7 +126,7 @@ public class PointsResource {
     @GetMapping("/points/{id}")
     public ResponseEntity<Points> getPoints(@PathVariable Long id) {
         log.debug("REST request to get Points : {}", id);
-        Optional<Points> points = pointsRepository.findById(id);
+        Optional<Points> points = pointsService.findOne(id);
         return ResponseUtil.wrapOrNotFound(points);
     }
 
@@ -122,7 +139,23 @@ public class PointsResource {
     @DeleteMapping("/points/{id}")
     public ResponseEntity<Void> deletePoints(@PathVariable Long id) {
         log.debug("REST request to delete Points : {}", id);
-        pointsRepository.deleteById(id);
+        pointsService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
     }
+
+    /**
+     * {@code SEARCH  /_search/points?query=:query} : search for the points corresponding
+     * to the query.
+     *
+     * @param query the query of the points search.
+     * @param pageable the pagination information.
+     * @return the result of the search.
+     */
+    @GetMapping("/_search/points")
+    public ResponseEntity<List<Points>> searchPoints(@RequestParam String query, Pageable pageable) {
+        log.debug("REST request to search for a page of Points for query {}", query);
+        Page<Points> page = pointsService.search(query, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        }
 }

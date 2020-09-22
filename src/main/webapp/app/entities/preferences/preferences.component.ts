@@ -18,6 +18,7 @@ import { PreferencesDeleteDialogComponent } from './preferences-delete-dialog.co
 export class PreferencesComponent implements OnInit, OnDestroy {
   preferences?: IPreferences[];
   eventSubscriber?: Subscription;
+  currentSearch: string;
   totalItems = 0;
   itemsPerPage = ITEMS_PER_PAGE;
   page!: number;
@@ -31,10 +32,30 @@ export class PreferencesComponent implements OnInit, OnDestroy {
     protected router: Router,
     protected eventManager: JhiEventManager,
     protected modalService: NgbModal
-  ) {}
+  ) {
+    this.currentSearch =
+      this.activatedRoute.snapshot && this.activatedRoute.snapshot.queryParams['search']
+        ? this.activatedRoute.snapshot.queryParams['search']
+        : '';
+  }
 
   loadPage(page?: number, dontNavigate?: boolean): void {
     const pageToLoad: number = page || this.page || 1;
+
+    if (this.currentSearch) {
+      this.preferencesService
+        .search({
+          page: pageToLoad - 1,
+          query: this.currentSearch,
+          size: this.itemsPerPage,
+          sort: this.sort(),
+        })
+        .subscribe(
+          (res: HttpResponse<IPreferences[]>) => this.onSuccess(res.body, res.headers, pageToLoad, !dontNavigate),
+          () => this.onError()
+        );
+      return;
+    }
 
     this.preferencesService
       .query({
@@ -46,6 +67,11 @@ export class PreferencesComponent implements OnInit, OnDestroy {
         (res: HttpResponse<IPreferences[]>) => this.onSuccess(res.body, res.headers, pageToLoad, !dontNavigate),
         () => this.onError()
       );
+  }
+
+  search(query: string): void {
+    this.currentSearch = query;
+    this.loadPage(1);
   }
 
   ngOnInit(): void {
@@ -99,11 +125,13 @@ export class PreferencesComponent implements OnInit, OnDestroy {
   protected onSuccess(data: IPreferences[] | null, headers: HttpHeaders, page: number, navigate: boolean): void {
     this.totalItems = Number(headers.get('X-Total-Count'));
     this.page = page;
+    this.ngbPaginationPage = this.page;
     if (navigate) {
       this.router.navigate(['/preferences'], {
         queryParams: {
           page: this.page,
           size: this.itemsPerPage,
+          search: this.currentSearch,
           sort: this.predicate + ',' + (this.ascending ? 'asc' : 'desc'),
         },
       });

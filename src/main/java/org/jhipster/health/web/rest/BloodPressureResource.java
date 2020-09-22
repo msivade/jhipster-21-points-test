@@ -1,8 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.BloodPressure;
-import org.jhipster.health.repository.BloodPressureRepository;
+import org.jhipster.health.service.BloodPressureService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
+import org.jhipster.health.service.dto.BloodPressureCriteria;
+import org.jhipster.health.service.BloodPressureQueryService;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -16,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -24,13 +25,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 /**
  * REST controller for managing {@link org.jhipster.health.domain.BloodPressure}.
  */
 @RestController
 @RequestMapping("/api")
-@Transactional
 public class BloodPressureResource {
 
     private final Logger log = LoggerFactory.getLogger(BloodPressureResource.class);
@@ -40,10 +41,13 @@ public class BloodPressureResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
-    private final BloodPressureRepository bloodPressureRepository;
+    private final BloodPressureService bloodPressureService;
 
-    public BloodPressureResource(BloodPressureRepository bloodPressureRepository) {
-        this.bloodPressureRepository = bloodPressureRepository;
+    private final BloodPressureQueryService bloodPressureQueryService;
+
+    public BloodPressureResource(BloodPressureService bloodPressureService, BloodPressureQueryService bloodPressureQueryService) {
+        this.bloodPressureService = bloodPressureService;
+        this.bloodPressureQueryService = bloodPressureQueryService;
     }
 
     /**
@@ -59,7 +63,7 @@ public class BloodPressureResource {
         if (bloodPressure.getId() != null) {
             throw new BadRequestAlertException("A new bloodPressure cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        BloodPressure result = bloodPressureRepository.save(bloodPressure);
+        BloodPressure result = bloodPressureService.save(bloodPressure);
         return ResponseEntity.created(new URI("/api/blood-pressures/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -80,7 +84,7 @@ public class BloodPressureResource {
         if (bloodPressure.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        BloodPressure result = bloodPressureRepository.save(bloodPressure);
+        BloodPressure result = bloodPressureService.save(bloodPressure);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, bloodPressure.getId().toString()))
             .body(result);
@@ -90,14 +94,27 @@ public class BloodPressureResource {
      * {@code GET  /blood-pressures} : get all the bloodPressures.
      *
      * @param pageable the pagination information.
+     * @param criteria the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of bloodPressures in body.
      */
     @GetMapping("/blood-pressures")
-    public ResponseEntity<List<BloodPressure>> getAllBloodPressures(Pageable pageable) {
-        log.debug("REST request to get a page of BloodPressures");
-        Page<BloodPressure> page = bloodPressureRepository.findAll(pageable);
+    public ResponseEntity<List<BloodPressure>> getAllBloodPressures(BloodPressureCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get BloodPressures by criteria: {}", criteria);
+        Page<BloodPressure> page = bloodPressureQueryService.findByCriteria(criteria, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /blood-pressures/count} : count all the bloodPressures.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/blood-pressures/count")
+    public ResponseEntity<Long> countBloodPressures(BloodPressureCriteria criteria) {
+        log.debug("REST request to count BloodPressures by criteria: {}", criteria);
+        return ResponseEntity.ok().body(bloodPressureQueryService.countByCriteria(criteria));
     }
 
     /**
@@ -109,7 +126,7 @@ public class BloodPressureResource {
     @GetMapping("/blood-pressures/{id}")
     public ResponseEntity<BloodPressure> getBloodPressure(@PathVariable Long id) {
         log.debug("REST request to get BloodPressure : {}", id);
-        Optional<BloodPressure> bloodPressure = bloodPressureRepository.findById(id);
+        Optional<BloodPressure> bloodPressure = bloodPressureService.findOne(id);
         return ResponseUtil.wrapOrNotFound(bloodPressure);
     }
 
@@ -122,7 +139,23 @@ public class BloodPressureResource {
     @DeleteMapping("/blood-pressures/{id}")
     public ResponseEntity<Void> deleteBloodPressure(@PathVariable Long id) {
         log.debug("REST request to delete BloodPressure : {}", id);
-        bloodPressureRepository.deleteById(id);
+        bloodPressureService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
     }
+
+    /**
+     * {@code SEARCH  /_search/blood-pressures?query=:query} : search for the bloodPressure corresponding
+     * to the query.
+     *
+     * @param query the query of the bloodPressure search.
+     * @param pageable the pagination information.
+     * @return the result of the search.
+     */
+    @GetMapping("/_search/blood-pressures")
+    public ResponseEntity<List<BloodPressure>> searchBloodPressures(@RequestParam String query, Pageable pageable) {
+        log.debug("REST request to search for a page of BloodPressures for query {}", query);
+        Page<BloodPressure> page = bloodPressureService.search(query, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        }
 }

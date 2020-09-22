@@ -6,7 +6,7 @@ import * as moment from 'moment';
 
 import { DATE_FORMAT } from 'app/shared/constants/input.constants';
 import { SERVER_API_URL } from 'app/app.constants';
-import { createRequestOption } from 'app/shared/util/request-util';
+import { createRequestOption, SearchWithPagination } from 'app/shared/util/request-util';
 import { IBloodPressure } from 'app/shared/model/blood-pressure.model';
 
 type EntityResponseType = HttpResponse<IBloodPressure>;
@@ -15,6 +15,7 @@ type EntityArrayResponseType = HttpResponse<IBloodPressure[]>;
 @Injectable({ providedIn: 'root' })
 export class BloodPressureService {
   public resourceUrl = SERVER_API_URL + 'api/blood-pressures';
+  public resourceSearchUrl = SERVER_API_URL + 'api/_search/blood-pressures';
 
   constructor(protected http: HttpClient) {}
 
@@ -47,6 +48,13 @@ export class BloodPressureService {
 
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+  }
+
+  search(req: SearchWithPagination): Observable<EntityArrayResponseType> {
+    const options = createRequestOption(req);
+    return this.http
+      .get<IBloodPressure[]>(this.resourceSearchUrl, { params: options, observe: 'response' })
+      .pipe(map((res: EntityArrayResponseType) => this.convertDateArrayFromServer(res)));
   }
 
   protected convertDateFromClient(bloodPressure: IBloodPressure): IBloodPressure {

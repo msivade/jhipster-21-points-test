@@ -1,8 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.Preferences;
-import org.jhipster.health.repository.PreferencesRepository;
+import org.jhipster.health.service.PreferencesService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
+import org.jhipster.health.service.dto.PreferencesCriteria;
+import org.jhipster.health.service.PreferencesQueryService;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -16,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -24,13 +25,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 /**
  * REST controller for managing {@link org.jhipster.health.domain.Preferences}.
  */
 @RestController
 @RequestMapping("/api")
-@Transactional
 public class PreferencesResource {
 
     private final Logger log = LoggerFactory.getLogger(PreferencesResource.class);
@@ -40,10 +41,13 @@ public class PreferencesResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
-    private final PreferencesRepository preferencesRepository;
+    private final PreferencesService preferencesService;
 
-    public PreferencesResource(PreferencesRepository preferencesRepository) {
-        this.preferencesRepository = preferencesRepository;
+    private final PreferencesQueryService preferencesQueryService;
+
+    public PreferencesResource(PreferencesService preferencesService, PreferencesQueryService preferencesQueryService) {
+        this.preferencesService = preferencesService;
+        this.preferencesQueryService = preferencesQueryService;
     }
 
     /**
@@ -59,7 +63,7 @@ public class PreferencesResource {
         if (preferences.getId() != null) {
             throw new BadRequestAlertException("A new preferences cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        Preferences result = preferencesRepository.save(preferences);
+        Preferences result = preferencesService.save(preferences);
         return ResponseEntity.created(new URI("/api/preferences/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -80,7 +84,7 @@ public class PreferencesResource {
         if (preferences.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        Preferences result = preferencesRepository.save(preferences);
+        Preferences result = preferencesService.save(preferences);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, preferences.getId().toString()))
             .body(result);
@@ -90,14 +94,27 @@ public class PreferencesResource {
      * {@code GET  /preferences} : get all the preferences.
      *
      * @param pageable the pagination information.
+     * @param criteria the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of preferences in body.
      */
     @GetMapping("/preferences")
-    public ResponseEntity<List<Preferences>> getAllPreferences(Pageable pageable) {
-        log.debug("REST request to get a page of Preferences");
-        Page<Preferences> page = preferencesRepository.findAll(pageable);
+    public ResponseEntity<List<Preferences>> getAllPreferences(PreferencesCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get Preferences by criteria: {}", criteria);
+        Page<Preferences> page = preferencesQueryService.findByCriteria(criteria, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /preferences/count} : count all the preferences.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/preferences/count")
+    public ResponseEntity<Long> countPreferences(PreferencesCriteria criteria) {
+        log.debug("REST request to count Preferences by criteria: {}", criteria);
+        return ResponseEntity.ok().body(preferencesQueryService.countByCriteria(criteria));
     }
 
     /**
@@ -109,7 +126,7 @@ public class PreferencesResource {
     @GetMapping("/preferences/{id}")
     public ResponseEntity<Preferences> getPreferences(@PathVariable Long id) {
         log.debug("REST request to get Preferences : {}", id);
-        Optional<Preferences> preferences = preferencesRepository.findById(id);
+        Optional<Preferences> preferences = preferencesService.findOne(id);
         return ResponseUtil.wrapOrNotFound(preferences);
     }
 
@@ -122,7 +139,23 @@ public class PreferencesResource {
     @DeleteMapping("/preferences/{id}")
     public ResponseEntity<Void> deletePreferences(@PathVariable Long id) {
         log.debug("REST request to delete Preferences : {}", id);
-        preferencesRepository.deleteById(id);
+        preferencesService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
     }
+
+    /**
+     * {@code SEARCH  /_search/preferences?query=:query} : search for the preferences corresponding
+     * to the query.
+     *
+     * @param query the query of the preferences search.
+     * @param pageable the pagination information.
+     * @return the result of the search.
+     */
+    @GetMapping("/_search/preferences")
+    public ResponseEntity<List<Preferences>> searchPreferences(@RequestParam String query, Pageable pageable) {
+        log.debug("REST request to search for a page of Preferences for query {}", query);
+        Page<Preferences> page = preferencesService.search(query, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        }
 }

@@ -30,11 +30,11 @@
   ],
   "changelogDate": "20200921130217",
   "dto": "no",
-  "searchEngine": false,
-  "service": "no",
+  "searchEngine": true,
+  "service": "serviceImpl",
   "entityTableName": "blood_pressure",
   "databaseType": "sql",
   "readOnly": false,
-  "jpaMetamodelFiltering": false,
+  "jpaMetamodelFiltering": true,
   "pagination": "pagination"
 }

@@ -38,11 +38,11 @@
   ],
   "changelogDate": "20200921125338",
   "dto": "no",
-  "searchEngine": false,
-  "service": "no",
+  "searchEngine": true,
+  "service": "serviceImpl",
   "entityTableName": "points",
   "databaseType": "sql",
   "readOnly": false,
-  "jpaMetamodelFiltering": false,
+  "jpaMetamodelFiltering": true,
   "pagination": "pagination"
 }
