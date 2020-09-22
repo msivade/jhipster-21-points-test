@@ -1,7 +1,10 @@
 package org.jhipster.health.web.rest;
 
 import org.jhipster.health.domain.Points;
+import org.jhipster.health.security.AuthoritiesConstants;
+import org.jhipster.health.security.SecurityUtils;
 import org.jhipster.health.service.PointsService;
+import org.jhipster.health.service.UserService;
 import org.jhipster.health.web.rest.errors.BadRequestAlertException;
 import org.jhipster.health.service.dto.PointsCriteria;
 import org.jhipster.health.service.PointsQueryService;
@@ -47,9 +50,13 @@ public class PointsResource {
 
     private final PointsQueryService pointsQueryService;
 
-    public PointsResource(PointsService pointsService, PointsQueryService pointsQueryService) {
+    private final UserService userService;
+
+    public PointsResource(PointsService pointsService, PointsQueryService pointsQueryService,
+                          UserService userService) {
         this.pointsService = pointsService;
         this.pointsQueryService = pointsQueryService;
+        this.userService = userService;
     }
 
     /**
@@ -64,6 +71,10 @@ public class PointsResource {
         log.debug("REST request to save Points : {}", points);
         if (points.getId() != null) {
             throw new BadRequestAlertException("A new points cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)){
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            points.setUser(userService.getUserWithAuthoritiesByLogin(SecurityUtils.getCurrentUserLogin().get()).get());
         }
         Points result = pointsService.save(points);
         return ResponseEntity.created(new URI("/api/points/" + result.getId()))
