@@ -69,4 +69,18 @@ public class PointsServiceImpl implements PointsService {
     public Page<Points> search(String query, Pageable pageable) {
         log.debug("Request to search for a page of Points for query {}", query);
         return pointsSearchRepository.search(queryStringQuery(query), pageable);    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Points> findAllByOrderByDateDesc(Pageable pageable) {
+        log.debug("Request to get all Points by order of date desc");
+        return pointsRepository.findAllByOrderByDateDesc(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Points> findByUserIsCurrentUser(Pageable pageable) {
+        log.debug("Request to get all Points from current user only");
+        return pointsRepository.findByUserIsCurrentUser(pageable);
+    }
 }

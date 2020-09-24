@@ -48,9 +48,13 @@ public interface PointsService {
      * Search for the points corresponding to the query.
      *
      * @param query the query of the search.
-     * 
+     *
      * @param pageable the pagination information.
      * @return the list of entities.
      */
     Page<Points> search(String query, Pageable pageable);
+
+    Page<Points> findAllByOrderByDateDesc(Pageable pageable);
+
+    Page<Points> findByUserIsCurrentUser(Pageable pageable);
 }
