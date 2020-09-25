@@ -68,5 +68,12 @@ public class PreferencesServiceImpl implements PreferencesService {
     @Transactional(readOnly = true)
     public Page<Preferences> search(String query, Pageable pageable) {
         log.debug("Request to search for a page of Preferences for query {}", query);
-        return preferencesSearchRepository.search(queryStringQuery(query), pageable);    }
+        return preferencesSearchRepository.search(queryStringQuery(query), pageable);
+    }
+
+    @Override
+    public Optional<Preferences> findOneByUserLogin(String login) {
+        log.debug("Request to get preferences of a specific use {}", login);
+        return preferencesRepository.findOneByUserLogin(login);
+    }
 }

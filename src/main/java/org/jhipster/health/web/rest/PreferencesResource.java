@@ -1,5 +1,6 @@
 package org.jhipster.health.web.rest;
 
+import io.micrometer.core.annotation.Timed;
 import org.jhipster.health.domain.Preferences;
 import org.jhipster.health.security.AuthoritiesConstants;
 import org.jhipster.health.security.SecurityUtils;
@@ -172,4 +173,23 @@ public class PreferencesResource {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
         }
+
+    /**
+     * GET /my-preferences -> get the current user's preferences.
+     */
+    @GetMapping("/my-preferences")
+    @Timed
+    public ResponseEntity<Preferences> getUserPreferences() {
+        String username = SecurityUtils.getCurrentUserLogin().get();
+        log.debug("REST request to get Preferences : {}", username);
+        Optional<Preferences> preferences =
+            preferencesService.findOneByUserLogin(username);
+        if (preferences.isPresent()) {
+            return new ResponseEntity<>(preferences.get(), HttpStatus.OK);
+        } else {
+            Preferences defaultPreferences = new Preferences();
+            defaultPreferences.setWeeklyGoal(10); // default
+            return new ResponseEntity<>(defaultPreferences, HttpStatus.OK);
+        }
+    }
 }

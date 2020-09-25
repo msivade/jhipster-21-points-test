@@ -48,9 +48,11 @@ public interface PreferencesService {
      * Search for the preferences corresponding to the query.
      *
      * @param query the query of the search.
-     * 
+     *
      * @param pageable the pagination information.
      * @return the list of entities.
      */
     Page<Preferences> search(String query, Pageable pageable);
+
+    Optional<Preferences> findOneByUserLogin(String login);
 }
