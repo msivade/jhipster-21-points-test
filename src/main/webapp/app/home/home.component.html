@@ -11,7 +11,7 @@
         <div [ngSwitch]="isAuthenticated()">
             <div class="alert alert-success" *ngSwitchCase="true">
                 <span id="home-logged-message" *ngIf="account" jhiTranslate="home.logged.message"
-                    [translateValues]="{ username: account.login }">You are logged in as user "{{ account.login }}".</span>
+                      [translateValues]="{ username: account.login }">You are logged in as user "{{ account.login }}".</span>
             </div>
 
             <div class="alert alert-warning" *ngSwitchCase="false">
@@ -24,6 +24,25 @@
                 <a class="alert-link" routerLink="account/register" jhiTranslate="global.messages.info.register.link">Register a new account</a>
             </div>
         </div>
+
+        <ul *ngIf="account">
+            <li><a [routerLink]="['/points/new']" class="btn btn-primary m-0 mb-1 text-white">Add Points</a>
+                <div class="col-md-11">
+                    <ngb-progressbar [max]="21" [showValue]="pointsThisWeek.points"
+                                     [value]="pointsThisWeek.points" [striped]="true">
+                        <span *ngIf="pointsThisWeek.points">
+                            {{pointsThisWeek.points}} / Goal: 10
+                        </span>
+                    </ngb-progressbar>
+                    <ngb-alert [dismissible]="false" [hidden]="pointsThisWeek.points">
+                        <span jhiTranslate="home.points.getMoving">
+                            No points yet this week, better get moving!
+                        </span>
+                    </ngb-alert>
+                </div></li>
+            <li><a [routerLink]="['/weight/new']" class="btn btn-primary m-0 mb-1 text-white">Add Weight</a></li>
+            <li><a [routerLink]="['/blood-pressure/new']" class="btn btn-primary m-0 mb-1 text-white">Add Blood Pressure</a></li>
+        </ul>
 
         <p jhiTranslate="home.question">
             If you have any question on JHipster:

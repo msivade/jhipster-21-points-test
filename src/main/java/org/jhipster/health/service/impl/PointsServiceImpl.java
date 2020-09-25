@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -82,5 +84,14 @@ public class PointsServiceImpl implements PointsService {
     public Page<Points> findByUserIsCurrentUser(Pageable pageable) {
         log.debug("Request to get all Points from current user only");
         return pointsRepository.findByUserIsCurrentUser(pageable);
+    }
+
+    @Override
+    public List<Points> findAllByDateBetweenAndUserLogin(LocalDate startOfWeek,
+                                                         LocalDate endOfWeek,
+                                                         Optional<String> currentUserLogin) {
+        log.info("Request to get all Points of the week from current user only");
+        return pointsRepository.findAllByDateBetweenAndUserLoginOrderByDateDesc(startOfWeek,
+            endOfWeek, currentUserLogin.get());
     }
 }

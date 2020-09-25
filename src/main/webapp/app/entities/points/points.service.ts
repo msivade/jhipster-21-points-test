@@ -57,6 +57,13 @@ export class PointsService {
       .pipe(map((res: EntityArrayResponseType) => this.convertDateArrayFromServer(res)));
   }
 
+  thisWeek(): Observable<EntityResponseType> {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return this.http
+      .get(`api/points-this-week?tz=${tz}`, { observe: 'response' })
+      .pipe(map((res: EntityResponseType) => this.convertDateFromServer(res)));
+  }
+
   protected convertDateFromClient(points: IPoints): IPoints {
     const copy: IPoints = Object.assign({}, points, {
       date: points.date && points.date.isValid() ? points.date.format(DATE_FORMAT) : undefined,

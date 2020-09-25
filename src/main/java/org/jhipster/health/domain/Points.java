@@ -22,6 +22,17 @@ public class Points implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public Points(){};
+
+    public Points(LocalDate date, Integer exercise,
+                  Integer meals, Integer alcohol, User user){
+        this.date = date;
+        this.user = user;
+        this.exercise = exercise;
+        this.meals = meals;
+        this.alcohol = alcohol;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")

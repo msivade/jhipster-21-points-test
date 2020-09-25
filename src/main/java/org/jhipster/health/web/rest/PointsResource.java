@@ -1,5 +1,6 @@
 package org.jhipster.health.web.rest;
 
+import io.micrometer.core.annotation.Timed;
 import org.jhipster.health.domain.Points;
 import org.jhipster.health.security.AuthoritiesConstants;
 import org.jhipster.health.security.SecurityUtils;
@@ -12,6 +13,7 @@ import org.jhipster.health.service.PointsQueryService;
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
+import org.jhipster.health.web.rest.vm.PointsPerWeekVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -175,5 +180,36 @@ public class PointsResource {
         Page<Points> page = pointsService.search(query, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * GET /points : get all the points for the current week.
+     */
+    @GetMapping("/points-this-week")
+    @Timed
+    public ResponseEntity<PointsPerWeekVM> getPointsThisWeek(
+        @RequestParam(value="tz", required=false) String timezone) {
+// Get current date (with timezone if passed in)
+        LocalDate now = LocalDate.now();
+        if (timezone != null) {
+            now = LocalDate.now(ZoneId.of(timezone));
         }
+// Get first day of week
+        LocalDate startOfWeek = now.with(DayOfWeek.MONDAY);
+// Get last day of week
+        LocalDate endOfWeek = now.with(DayOfWeek.SUNDAY);
+        log.debug("Looking for points between: {} and {}", startOfWeek, endOfWeek);
+        List<Points> points =
+            pointsService.findAllByDateBetweenAndUserLogin(
+                startOfWeek, endOfWeek, SecurityUtils.getCurrentUserLogin());
+        return calculatePoints(startOfWeek, points);
+    }
+    private ResponseEntity<PointsPerWeekVM> calculatePoints(LocalDate startOfWeek,
+                                                          List<Points> points) {
+        Integer numPoints = points.stream()
+            .mapToInt(p -> p.getExercise() + p.getMeals() + p.getAlcohol())
+            .sum();
+        PointsPerWeekVM count = new PointsPerWeekVM(startOfWeek, numPoints);
+        return new ResponseEntity<>(count, HttpStatus.OK);
+    }
 }
