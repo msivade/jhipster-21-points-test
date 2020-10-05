@@ -10,6 +10,7 @@ import javax.validation.constraints.*;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 
 /**
  * A BloodPressure.
@@ -42,6 +43,15 @@ public class BloodPressure implements Serializable {
     @ManyToOne
     @JsonIgnoreProperties(value = "bloodPressures", allowSetters = true)
     private User user;
+
+    public BloodPressure(){};
+
+    public BloodPressure(ZonedDateTime date, Integer systolic, Integer diastolic, User user){
+        this.timestamp = date.toLocalDate();
+        this.systolic = systolic;
+        this.diastolic = diastolic;
+        this.user = user;
+    }
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
     public Long getId() {

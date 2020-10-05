@@ -1,6 +1,6 @@
 {
   "home": {
-    "title": "Welcome, Java Hipster!",
+    "title": "Welcome, User!",
     "subtitle": "This is your homepage",
     "logged": {
       "message": "You are logged in as user \"{{username}}\"."
@@ -18,6 +18,9 @@
       "preferences": "Edit your preferences"
     },
     "like": "If you like JHipster, don't forget to give us a star on",
-    "github": "GitHub"
+    "github": "GitHub",
+    "bloodPressure": {
+      "noReadings": "No Blood Pressure readings available"
+    }
   }
 }

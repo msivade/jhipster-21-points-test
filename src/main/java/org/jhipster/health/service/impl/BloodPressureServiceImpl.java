@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -69,4 +71,10 @@ public class BloodPressureServiceImpl implements BloodPressureService {
     public Page<BloodPressure> search(String query, Pageable pageable) {
         log.debug("Request to search for a page of BloodPressures for query {}", query);
         return bloodPressureSearchRepository.search(queryStringQuery(query), pageable);    }
+
+    @Override
+    public List<BloodPressure> findAllByTimestampBetweenAndUserLoginOrderByTimestampDesc(ZonedDateTime firstDate, ZonedDateTime secondDate, String login) {
+        log.debug("Request to geat all blood pressure readings for a certain period {} to {}", firstDate, secondDate);
+        return bloodPressureRepository.findAllByTimestampBetweenAndUserLoginOrderByTimestampDesc(firstDate.toLocalDate(), secondDate.toLocalDate(), login);
+    }
 }

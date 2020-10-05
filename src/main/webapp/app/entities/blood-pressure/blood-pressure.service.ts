@@ -57,6 +57,12 @@ export class BloodPressureService {
       .pipe(map((res: EntityArrayResponseType) => this.convertDateArrayFromServer(res)));
   }
 
+  last30Days(): Observable<EntityResponseType> {
+    return this.http
+      .get('api/bp-by-days/30', { observe: 'response' })
+      .pipe(map((res: EntityResponseType) => this.convertDateFromServer(res)));
+  }
+
   protected convertDateFromClient(bloodPressure: IBloodPressure): IBloodPressure {
     const copy: IBloodPressure = Object.assign({}, bloodPressure, {
       timestamp: bloodPressure.timestamp && bloodPressure.timestamp.isValid() ? bloodPressure.timestamp.format(DATE_FORMAT) : undefined,

@@ -5,6 +5,9 @@ import org.jhipster.health.domain.BloodPressure;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.awt.*;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -48,9 +51,11 @@ public interface BloodPressureService {
      * Search for the bloodPressure corresponding to the query.
      *
      * @param query the query of the search.
-     * 
+     *
      * @param pageable the pagination information.
      * @return the list of entities.
      */
     Page<BloodPressure> search(String query, Pageable pageable);
+
+    List<BloodPressure> findAllByTimestampBetweenAndUserLoginOrderByTimestampDesc(ZonedDateTime firstDate, ZonedDateTime secondDate, String login);
 }

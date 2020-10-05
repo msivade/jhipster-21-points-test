@@ -1,5 +1,6 @@
 package org.jhipster.health.web.rest;
 
+import io.micrometer.core.annotation.Timed;
 import org.jhipster.health.domain.BloodPressure;
 import org.jhipster.health.security.AuthoritiesConstants;
 import org.jhipster.health.security.SecurityUtils;
@@ -12,6 +13,7 @@ import org.jhipster.health.service.BloodPressureQueryService;
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
+import org.jhipster.health.web.rest.vm.BloodPressureByPeriodVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,8 +28,12 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -172,4 +178,20 @@ public class BloodPressureResource {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
         }
+
+    /**
+     * GET /bp-by-days : get all the blood pressure readings by last x days.
+     */
+    @RequestMapping(value = "/bp-by-days/{days}")
+    @Timed
+    public ResponseEntity<BloodPressureByPeriodVM> getByDays(@PathVariable int days) {
+        ZonedDateTime rightNow = ZonedDateTime.now(ZoneOffset.UTC);
+        ZonedDateTime daysAgo = rightNow.minusDays(days);
+        List<BloodPressure> readings =
+            bloodPressureService.findAllByTimestampBetweenAndUserLoginOrderByTimestampDesc(daysAgo, rightNow,
+                SecurityUtils.getCurrentUserLogin().get());
+        BloodPressureByPeriodVM response =
+            new BloodPressureByPeriodVM("Last " + days + " Days", readings);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
